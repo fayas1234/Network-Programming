@@ -9,7 +9,7 @@ struct packet{
 
 void main()
 {
-	int n;
+	int n,sum=0;
 	printf("\nEnter the number of packets:");
 	scanf("%d",&n);
 	
@@ -18,7 +18,10 @@ void main()
 	
 	printf("\nEnter the packets in order of their arrival time:\n");
 	for(int i=0;i<n;i++)
+	{
 		scanf("%d %d",&pac[i].at,&pac[i].size);
+		sum+=pac[i].size;
+	}
 		
 	int bsize;
 	printf("\nEnter the bucket size:");
@@ -39,6 +42,7 @@ void main()
 			if(pac[i].size>bsize-stored)
 			{
 				printf("\nPacket discarded");
+				sum-=pac[i].size;
 				fin++;
 			}
 			
@@ -55,6 +59,7 @@ void main()
 				else if(stored<=out)
 				{
 					printf("\n%d bytes packets transmitted",stored);
+					sum-=stored;
 					stored=0;
 					printf("\nPackets in the bucket is 0 bytes");
 					fin++;
@@ -63,7 +68,8 @@ void main()
 				{
 					printf("\n%d bytes packets transmitted",out);
 					stored-=out;
-					printf("\nPackets int the bucket is %d bytes",stored);
+					sum-=out;
+					printf("\nPackets in the bucket is %d bytes",stored);
 				}
 				
 			}
@@ -82,6 +88,7 @@ void main()
 			else if(stored<=out)
 			{
 				printf("\n%d bytes packets transmitted",stored);
+				sum-=stored;
 				stored=0;
 				printf("\nPackets in the bucket is 0 bytes");
 				fin++;
@@ -90,13 +97,14 @@ void main()
 			{
 				printf("\n%d bytes packets transmitted",out);
 				stored-=out;
-				printf("\nPackets int the bucket is %d bytes",stored);
+				sum-=out;
+				printf("\nPackets in the bucket is %d bytes",stored);
 			}
 				
 			time++;
 		}
 		
-		if(fin==n)
+		if(sum==0)
 			break;
 		
 		
