@@ -13,7 +13,7 @@ int cnt=0;
 int main()
 {
 	int socket_desc,client_size,client_sock;
-	FILE* f1;
+	
 	struct sockaddr_in client_addr,server_addr;
 	char client_msg[4096],server_msg[4096];
 	int arr[10];
