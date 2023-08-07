@@ -1,116 +1,82 @@
-//Program to implement leaky bucket congestion control algorithm
+//Program to impelement leaky bucket algorithm
 
 #include <stdio.h>
 
-struct packet{
+struct proc
+{
 	int at,size;
 };
+
+typedef struct proc proc;
 
 
 void main()
 {
-	int n,sum=0;
-	printf("\nEnter the number of packets:");
+	int n;
+	printf("\nEnter the number of processes:");
 	scanf("%d",&n);
 	
+	proc packet[n];
 	
-	struct packet pac[n];
-	
-	printf("\nEnter the packets in order of their arrival time:\n");
+	int sum=0;
+	printf("\nEnter the arrival time and packet size in order:\n");
 	for(int i=0;i<n;i++)
 	{
-		scanf("%d %d",&pac[i].at,&pac[i].size);
-		sum+=pac[i].size;
+		scanf("%d %d",&packet[i].at,&packet[i].size);
+		sum+=packet[i].size;
 	}
-		
+	
 	int bsize;
 	printf("\nEnter the bucket size:");
 	scanf("%d",&bsize);
 	
+	int stored=0,time=1,i=0;
+	
 	int out;
 	printf("\nEnter the output rate:");
 	scanf("%d",&out);
-
-	int stored=0,i=0,fin=0;
-	int time=1;
 	
-	while(1)
-	{	
-		printf("\n\n\nAT TIME %d",time);
-		if(time==pac[i].at)
+	while(sum!=0)
+	{
+		printf("\nAT TIME %d\n",time);
+		if(time==packet[i].at)
 		{
-			if(pac[i].size>bsize-stored)
+			if(packet[i].size>=bsize-stored)
 			{
-				printf("\nPacket discarded");
-				sum-=pac[i].size;
-				fin++;
+				sum-=packet[i].size;
+				printf("\nPacket disgarded %d\n",i+1);
 			}
-			
 			else
-			{
-				stored+=pac[i].size;
-				printf("\n%d bytes packet inserted",pac[i].size);
-				if(stored==0)
-				{
-					printf("\nNo packets to transmit");
-					printf("\nPackets in the bucket is 0 bytes");
-				}
-				
-				else if(stored<=out)
-				{
-					printf("\n%d bytes packets transmitted",stored);
-					sum-=stored;
-					stored=0;
-					printf("\nPackets in the bucket is 0 bytes");
-					fin++;
-				}
-				else
-				{
-					printf("\n%d bytes packets transmitted",out);
-					stored-=out;
-					sum-=out;
-					printf("\nPackets in the bucket is %d bytes",stored);
-				}
-				
-			}
+				stored+=packet[i].size;
 			i++;
-			time++;
 		}
+			
 		
+		if(stored==0)
+		{
+			printf("\nNo packets to transmit\n");
+			printf("\n0 bytes in the bucket\n");
+		}
+				
+		else if(stored<out)
+		{
+					
+			printf("\n%d packets transmitted\n",stored);
+			sum-=stored;
+			stored=0;
+			printf("\n%d bytes in the bucket\n",stored);
+		}
+				
 		else
 		{
-			if(stored==0)
-			{
-				printf("\nNo packets to transmit");
-				printf("\nPackets in the bucket is 0 bytes");
-			}
-			
-			else if(stored<=out)
-			{
-				printf("\n%d bytes packets transmitted",stored);
-				sum-=stored;
-				stored=0;
-				printf("\nPackets in the bucket is 0 bytes");
-				fin++;
-			}
-			else
-			{
-				printf("\n%d bytes packets transmitted",out);
-				stored-=out;
-				sum-=out;
-				printf("\nPackets in the bucket is %d bytes",stored);
-			}
-				
-			time++;
+			printf("\n%d packets transmitted\n",out);
+			stored-=out;
+			sum-=out;
+			printf("\n%d bytes in the bucket\n",stored);
 		}
-		
-		if(sum==0)
-			break;
-		
-		
-	}	
+		time++;
+	}
 	
-	printf("\n");	
-	
-
 }
+		
+	
