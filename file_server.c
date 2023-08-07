@@ -1,129 +1,135 @@
-//Program to implement server side TCP
+//Program to implement TCP concurrent file server
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <stdlib.h> 
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-int cnt=0;
 
 int main()
 {
-	int socket_desc,client_size,client_sock;
-	FILE* f1;
+	int socket_desc,client_sock;
+	
+	char client_message[4096],server_message[4096];
+	
+	memset(server_message,'\0',sizeof(server_message));
+	memset(client_message,'\0',sizeof(client_message));
+	
 	struct sockaddr_in client_addr,server_addr;
-	char client_msg[4096],server_msg[4096];
 	
-	//Cleaning the buffers
-	memset(&client_msg,'\0',sizeof(client_msg));
-	memset(&server_msg,'\0',sizeof(server_msg));
-	
-	//creating the socket
 	socket_desc=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 	
 	if(socket_desc<0)
 	{
-		printf("Socket creation unsuccessful\n");
+		printf("Socket not created\n");
 		return(-1);
 	}
+	printf("\nSocket created successfully");
 	
-	printf("Socket created successfully\n");
-	pid_t child;
-	
+	//Add addresses
 	server_addr.sin_family=AF_INET;
-	server_addr.sin_port=htons(2007);
+	server_addr.sin_port=htons(2005);
 	server_addr.sin_addr.s_addr=inet_addr("127.0.0.1");
 	
-	//binding
-	if(bind(socket_desc,(struct sockaddr*)&server_addr,sizeof(server_addr))<0)
+	if(bind(socket_desc,(struct sockaddr*)&server_addr,sizeof(server_addr)))
 	{
-		printf("Couldn't bind to the port\n");
+		printf("\nbinding unsuccessful");
 		return(-1);
 	}
 	
-	printf("Done with binding\n");
+	printf("\nBinding successfull");
 	
-	
-	//listening for client
-	
-	if(listen(socket_desc,10)<0)
+	if(listen(socket_desc,1)<0)
 	{
-		printf("Listening unsuccessful\n");
+		printf("\nError while listening");
 		return(-1);
 	}
 	
-	printf("Listening for incoming connections\n");
+	printf("\nListening...");
+	int count=0;
+	
+	printf("\nClient connected at address:%s and port:%d",inet_ntoa(server_addr.sin_addr),ntohs(server_addr.sin_port));
+	
+	pid_t child;
+	while(1)
+	{
+		int client_size=sizeof(client_addr);
+		
+		client_sock=accept(socket_desc,(struct sockaddr*)&client_addr,&client_size);
+		
+		if(client_sock<0)
+		{
+			printf("\nError while accepting");
+			return(-1);
+		}
+		
+		printf("Client connected at ip:%s and port:%i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+
+   	 	printf("Client :%d connected\n\n", ++count);
+		
+			
+		if((child=fork())==0)
+		{
+			close(socket_desc);
+			
+			
+			
+			memset(server_message,'\0',sizeof(server_message));
+			memset(client_message,'\0',sizeof(client_message));
+			
+			if(recv(client_sock,client_message,sizeof(client_message),0)<0)
+			{
+				printf("\nCouldnot recieve");
+				return(-1);
+			}
+			
+			printf("\nMessage recieved from client %d is:%s",count,client_message);
+			
+			FILE* f1=fopen(client_message,"r");
+			
+			pid_t pid=getpid();
+			
+			snprintf(server_message,sizeof(server_message),"pid:%d||",pid);
+			
+			if(f1==NULL)
+			{
+				strcat(server_message," file not found");
+				if(send(client_sock,server_message,sizeof(server_message),0)<0)
+				{
+					printf("\nCouldnot sent");
+					return(-1);
+				}
+				printf("\nSend successfully\n\n");
+			}
+			
+			else
+			{
+				snprintf(server_message,sizeof(server_message),"pid:%d||",pid);
+				
+				while(fgets(server_message+strlen(server_message),sizeof(server_message)-strlen(server_message),f1));
+				
+				if(send(client_sock,server_message,sizeof(server_message),0)<0)
+				{
+					printf("\nCouldnot sent");
+					return(-1);
+				}
+				printf("\nSend successfully\n\n");
+				
+				fclose(f1);
+			
+			}
+			exit(0);
+			
+		}
+	
+	}
+	printf("\n");
 	
 	
-	while (1) {
-    client_size = sizeof(client_addr);
-
-    //Accepting the connection
-    client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);
-
-    if (client_sock < 0) {
-        printf("Cannot accept\n");
-        return (-1);
-    }
-
-    printf("Client connected at ip:%s and port:%i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-
-    printf("Client :%d connected\n\n", ++cnt);
-    
-    
-
-
-    if ((child = fork()) == 0) {
-        close(socket_desc);
-
-            if (recv(client_sock, client_msg, sizeof(client_msg), 0) < 0) {
-                printf("Couldn't receive the Client's message\n");
-                return (-1);
-            }
-            printf("\nMessage from client %d:%s\n",cnt,client_msg);
-
-            f1 = fopen(client_msg, "r");
-
-            if (f1 == NULL) {
-            
-            	snprintf(server_msg,sizeof(server_msg),"pid:%d\n",getpid());
-                strcat(server_msg, "not found");
-                printf("%s asdas\n",server_msg);
-                if (send(client_sock, server_msg, sizeof(server_msg), 0) < 0) {
-                    printf("Couldn't Send Server's message\n");
-                    return (-1);
-                }
-         
-                exit(0);
-            } else {
-                printf("%d\n", getpid());
-                snprintf(server_msg, sizeof(server_msg), "pid:%d\n", getpid());
-                fgets(server_msg + strlen(server_msg), sizeof(server_msg) - strlen(server_msg), f1);
-                
-                printf("%s \n",server_msg);
-                if (send(client_sock, server_msg, sizeof(server_msg), 0) < 0) {
-                    printf("Couldn't Send Server's message\n");
-                    return (-1);
-                }
-                fclose(f1);
-                
-              
-                 exit(0);
-            }
-        close(client_sock);
-    }
-    
-    
-    
-}
+	//Close the sockets
+	
+	close(socket_desc);
 	close(client_sock);
-	return(0);
 }
-	
-	
-
-
-
